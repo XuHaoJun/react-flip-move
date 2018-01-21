@@ -134,16 +134,20 @@ class FlipMove extends Component<ConvertedProps, FlipMoveState> {
   }
 
   componentWillReceiveProps(nextProps: ConvertedProps) {
+    // Convert opaque children object to array.
+    const nextChildren: Array<Element<*>> = getElementChildren(
+      nextProps.children,
+    );
+
+    if (!this.shouldUpdateChildren(nextChildren)) {
+      return;
+    }
+
     // When the component is handed new props, we need to figure out the
     // "resting" position of all currently-rendered DOM nodes.
     // We store that data in this.parent and this.children,
     // so it can be used later to work out the animation.
     this.updateBoundingBoxCaches();
-
-    // Convert opaque children object to array.
-    const nextChildren: Array<Element<*>> = getElementChildren(
-      nextProps.children,
-    );
 
     // Next, we need to update our state, so that it contains our new set of
     // children. If animation is disabled or unsupported, this is easy;
@@ -185,6 +189,24 @@ class FlipMove extends Component<ConvertedProps, FlipMoveState> {
       this.runAnimation();
     }
   }
+
+  // if children key and order not change then skip update action.
+  shouldUpdateChildren = (nextChildren: Array<Element<*>>): boolean => {
+    const children: Array<Element<*>> = getElementChildren(this.props.children);
+    if (nextChildren.length !== children.length) {
+      return true;
+    }
+    for (const [i, nextChild] of nextChildren.entries()) {
+      const child = children[i];
+      if (!child) {
+        return true;
+      }
+      if (child.key !== nextChild.key) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   findDOMContainer = () => {
     // eslint-disable-next-line react/no-find-dom-node
